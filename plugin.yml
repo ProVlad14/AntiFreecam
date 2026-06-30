@@ -1,0 +1,6 @@
+name: AntiFreecam
+version: 1.0
+main: AntiFreecam
+api-version: '1.21'
+depend: [packetevents]
+author: Gemini
