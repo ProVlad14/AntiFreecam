@@ -3,7 +3,7 @@ import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
-import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientUseItem;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.bukkit.Bukkit;
@@ -32,10 +32,10 @@ public final class AntiFreecam extends JavaPlugin {
                     Player player = (Player) event.getPlayer();
                     if (player == null || player.isOp()) return;
 
-                    // 1. Check Block Interactions (Opening chests from far away)
-                    if (event.getPacketType() == PacketType.Play.Client.USE_ITEM) {
+                    // 1. Check Block Interactions (Opening chests, placing blocks from far away)
+                    if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
                         try {
-                            WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event);
+                            WrapperPlayClientPlayerBlockPlacement wrapper = new WrapperPlayClientPlayerBlockPlacement(event);
                             com.github.retrooper.packetevents.util.Vector3i vec = wrapper.getBlockPosition();
                             
                             if (vec != null) {
@@ -50,11 +50,21 @@ public final class AntiFreecam extends JavaPlugin {
                         } catch (Exception ignored) {}
                     }
 
-                    // 2. Check Entity Interactions (Attacking or right-clicking out of range)
+                    // 2. Check Entity Interactions (Attacking or right-clicking out of body range)
                     if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
                         try {
                             WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
-                            org.bukkit.entity.Entity target = Bukkit.getEntity(wrapper.getTargetId());
+                            
+                            // Get entities matching the exact tracked network ID
+                            int entityId = wrapper.getEntityId();
+                            org.bukkit.entity.Entity target = null;
+                            
+                            for (org.bukkit.entity.Entity entity : player.getWorld().getEntities()) {
+                                if (entity.getEntityId() == entityId) {
+                                    target = entity;
+                                    break;
+                                }
+                            }
                             
                             if (target != null) {
                                 double distance = player.getLocation().distance(target.getLocation());
