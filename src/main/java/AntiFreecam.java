@@ -4,7 +4,7 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientUseItem;
-import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -32,6 +32,7 @@ public final class AntiFreecam extends JavaPlugin {
                     Player player = (Player) event.getPlayer();
                     if (player == null || player.isOp()) return;
 
+                    // 1. Check Block Interactions (Opening chests from far away)
                     if (event.getPacketType() == PacketType.Play.Client.USE_ITEM) {
                         try {
                             WrapperPlayClientUseItem wrapper = new WrapperPlayClientUseItem(event);
@@ -49,9 +50,10 @@ public final class AntiFreecam extends JavaPlugin {
                         } catch (Exception ignored) {}
                     }
 
-                    if (event.getPacketType() == PacketType.Play.Client.PLAYER_INTERACT_ENTITY) {
+                    // 2. Check Entity Interactions (Attacking or right-clicking out of range)
+                    if (event.getPacketType() == PacketType.Play.Client.INTERACT_ENTITY) {
                         try {
-                            WrapperPlayClientPlayerInteractEntity wrapper = new WrapperPlayClientPlayerInteractEntity(event);
+                            WrapperPlayClientInteractEntity wrapper = new WrapperPlayClientInteractEntity(event);
                             org.bukkit.entity.Entity target = Bukkit.getEntity(wrapper.getTargetId());
                             
                             if (target != null) {
